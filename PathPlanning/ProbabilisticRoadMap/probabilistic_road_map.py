@@ -97,7 +97,7 @@ def is_collision(sx, sy, gx, gy, rr, okdtree):
     dx = gx - sx
     dy = gy - sy
     yaw = math.atan2(gy - sy, gx - sx)
-    d = math.sqrt(dx**2 + dy**2)
+    d = math.hypot(dx, dy)
 
     if d >= MAX_EDGE_LEN:
         return True
@@ -161,12 +161,18 @@ def generate_roadmap(sample_x, sample_y, rr, obkdtree):
 
 def dijkstra_planning(sx, sy, gx, gy, ox, oy, rr, road_map, sample_x, sample_y):
     """
+    sx: start x position [m]
+    sy: start y position [m]
     gx: goal x position [m]
-    gx: goal x position [m]
+    gy: goal y position [m]
     ox: x position list of Obstacles [m]
     oy: y position list of Obstacles [m]
-    reso: grid resolution [m]
-    rr: robot radius[m]
+    rr: robot radius [m]
+    road_map: ??? [m]
+    sample_x: ??? [m]
+    sample_y: ??? [m]
+
+    @return: Two lists of path coordinates ([x1, x2, ...], [y1, y2, ...]), empty list when no path was found
     """
 
     nstart = Node(sx, sy, 0.0, -1)
@@ -175,9 +181,12 @@ def dijkstra_planning(sx, sy, gx, gy, ox, oy, rr, road_map, sample_x, sample_y):
     openset, closedset = dict(), dict()
     openset[len(road_map) - 2] = nstart
 
+    path_found = True
+
     while True:
         if not openset:
             print("Cannot find path")
+            path_found = False
             break
 
         c_id = min(openset, key=lambda o: openset[o].cost)
@@ -185,6 +194,9 @@ def dijkstra_planning(sx, sy, gx, gy, ox, oy, rr, road_map, sample_x, sample_y):
 
         # show graph
         if show_animation and len(closedset.keys()) % 2 == 0:
+            # for stopping simulation with the esc key.
+            plt.gcf().canvas.mpl_connect('key_release_event',
+                    lambda event: [exit(0) if event.key == 'escape' else None])
             plt.plot(current.x, current.y, "xg")
             plt.pause(0.001)
 
@@ -204,7 +216,7 @@ def dijkstra_planning(sx, sy, gx, gy, ox, oy, rr, road_map, sample_x, sample_y):
             n_id = road_map[c_id][i]
             dx = sample_x[n_id] - current.x
             dy = sample_y[n_id] - current.y
-            d = math.sqrt(dx**2 + dy**2)
+            d = math.hypot(dx, dy)
             node = Node(sample_x[n_id], sample_y[n_id],
                         current.cost + d, c_id)
 
@@ -217,6 +229,9 @@ def dijkstra_planning(sx, sy, gx, gy, ox, oy, rr, road_map, sample_x, sample_y):
                     openset[n_id].pind = c_id
             else:
                 openset[n_id] = node
+
+    if path_found is False:
+        return [], []
 
     # generate final course
     rx, ry = [ngoal.x], [ngoal.y]
@@ -249,8 +264,8 @@ def sample_points(sx, sy, gx, gy, rr, ox, oy, obkdtree):
     sample_x, sample_y = [], []
 
     while len(sample_x) <= N_SAMPLE:
-        tx = (random.random() - minx) * (maxx - minx)
-        ty = (random.random() - miny) * (maxy - miny)
+        tx = (random.random() * (maxx - minx)) + minx
+        ty = (random.random() * (maxy - miny)) + miny
 
         index, dist = obkdtree.search(np.array([tx, ty]).reshape(2, 1))
 

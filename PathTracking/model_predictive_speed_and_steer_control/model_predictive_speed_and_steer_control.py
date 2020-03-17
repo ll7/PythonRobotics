@@ -348,7 +348,7 @@ def check_goal(state, goal, tind, nind):
     # check goal
     dx = state.x - goal[0]
     dy = state.y - goal[1]
-    d = math.sqrt(dx ** 2 + dy ** 2)
+    d = math.hypot(dx, dy)
 
     isgoal = (d <= GOAL_DIS)
 
@@ -429,6 +429,9 @@ def do_simulation(cx, cy, cyaw, ck, sp, dl, initial_state):
 
         if show_animation:  # pragma: no cover
             plt.cla()
+            # for stopping simulation with the esc key.
+            plt.gcf().canvas.mpl_connect('key_release_event',
+                    lambda event: [exit(0) if event.key == 'escape' else None])
             if ox is not None:
                 plt.plot(ox, oy, "xr", label="MPC")
             plt.plot(cx, cy, "-r", label="course")
@@ -552,9 +555,9 @@ def main():
     dl = 1.0  # course tick
     # cx, cy, cyaw, ck = get_straight_course(dl)
     # cx, cy, cyaw, ck = get_straight_course2(dl)
-    cx, cy, cyaw, ck = get_straight_course3(dl)
+    # cx, cy, cyaw, ck = get_straight_course3(dl)
     # cx, cy, cyaw, ck = get_forward_course(dl)
-    # CX, cy, cyaw, ck = get_switch_back_course(dl)
+    cx, cy, cyaw, ck = get_switch_back_course(dl)
 
     sp = calc_speed_profile(cx, cy, cyaw, TARGET_SPEED)
 
@@ -617,5 +620,5 @@ def main2():
 
 
 if __name__ == '__main__':
-    # main()
-    main2()
+    main()
+    # main2()
